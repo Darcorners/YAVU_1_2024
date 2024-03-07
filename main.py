@@ -1,9 +1,7 @@
-import tkinter
 import tkinter as TK
+from tkinter import ttk
 from tkinter import messagebox
 from Connect import connection
-import pymysql
-
 
 root = TK.Tk()
 root.geometry("450x400")
@@ -12,36 +10,32 @@ root.title("Актерское агенство")
 
 Name = TK.Label(text="Имя:")
 Name.pack()
-Info1 = TK.Text(root, height = 1, width = 52)
-Info1.pack()
-SurName = TK.Label(text="Фамилия:")
-SurName.pack()
-Info2 = TK.Text(root, height = 1, width = 52)
-Info2.pack()
-Education = TK.Label(text="Образование:")
-Education.pack()
-Info3 = TK.Text(root, height = 1, width = 52)
-Info3.pack()
-Numbers = TK.Label(text="Кол-во ролей:")
-Numbers.pack()
-Info4 = TK.Text(root, height = 1, width = 52)
-Info4.pack()
 
-def DataInsert():
-    try:
-        with connection.cursor() as cursor:
-            name = Info1.get("1.0", "end-1c")
-            surname = Info2.get("1.0", "end-1c")
-            education = Info3.get("1.0", "end-1c")
-            numbers = Info4.get("1.0", "end-1c")
-            InsertQuery = f"INSERT INTO `Actor`(`Name`, `Surname`, `Education`, `Number_of_roles`) VALUES ('{name}','{surname}','{education}','{numbers}') "
-            cursor.execute(InsertQuery)
+list = []
+
+def create_data():
+    with connection.cursor() as cursor:
+        cursor.execute(""" SELECT `Name`, `Surname` FROM `Actor` WHERE 1 """)
+        result = cursor.fetchall()
+        for i in result:
+            checkbox_var = TK.IntVar()
+            name_surname = f"{i['Name']} {i['Surname']}"
+            checkbox = ttk.Checkbutton(text=name_surname, variable=checkbox_var, command=lambda var=checkbox_var, name=name_surname: checking(var, name))
+            checkbox.pack()
+
+def checking(var, name):
+    if var.get() == 1:
+        list.append(name)
+    else:
+        list.remove(name)
+
+    print(list)
+    with connection.cursor() as cursor:
+        for name in list:
+            cursor.execute(f""" INSERT INTO `Vote`(`Name_Surname`, `Votes`) VALUES ('{name}', 1) """)
             connection.commit()
-            messagebox.showinfo("Информация", "Данные успешно внесены в базу данных")
-    except Exception as ex:
-        print(ex)
-        messagebox.showerror("Ошибка", "Ошибка в введённых данных")
+create_data()
 
-Accept = TK.Button(text="Внести данные",command=DataInsert)
+Accept = TK.Button(text="Внести данные")
 Accept.pack()
 root.mainloop()
